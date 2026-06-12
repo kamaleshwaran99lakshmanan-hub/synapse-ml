@@ -25,9 +25,13 @@ app = FastAPI(title="Synapse ML API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # Load the leak-proof model
-MODEL_PATH = "models/layoff_xgboost_model.json"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_PATH = BASE_DIR / "models" / "layoff_xgboost_model.json"
+
 model = xgb.XGBClassifier()
-model.load_model(MODEL_PATH)
+model.load_model(str(MODEL_PATH))
 OPTIMAL_THRESHOLD = 0.2137  # From our leak-proof evaluation
 
 sec_scraper = SECScraper()
@@ -110,8 +114,15 @@ async def predict_risk(request: PredictRequest):
         X = df_features[EXPECTED_FEATURES].apply(pd.to_numeric, errors='coerce').fillna(0)
         
         # 4. Inference
+        # 4. Inference
         prob = float(model.predict_proba(X)[0][1])
-        risk_level = "High Risk" if prob >= OPTIMAL_THRESHOLD else "Low Risk"
+
+        if prob < 0.2137:
+            risk_level = "Low Risk"
+        elif prob < 0.50:
+            risk_level = "Medium Risk"
+        else:
+            risk_level = "High Risk"
         
         return {
             "ticker": ticker,

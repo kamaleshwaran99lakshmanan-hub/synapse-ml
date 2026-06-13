@@ -118,7 +118,7 @@ async def predict_risk(request: PredictRequest):
         prob = float(model.predict_proba(X)[0][1])
 
         if prob < 0.2137:
-            risk_level = "Low Risk"
+                risk_level = "Low Risk"
         elif prob < 0.50:
             risk_level = "Medium Risk"
         else:
@@ -170,6 +170,10 @@ def search_ticker(query: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/")
+def root():
+    return {"status": "alive"}
 
 if __name__ == "__main__":
     import uvicorn
